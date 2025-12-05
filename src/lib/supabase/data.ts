@@ -54,19 +54,48 @@ export async function createGroup(payload: Omit<Group, "id" | "created_at">) {
 }
 
 export async function fetchSubjects() {
-  const { data, error } = await supabase.from<Subject>("subjects").select("*").order("created_at", { ascending: true });
+  const { data, error } = await supabase
+    .from<Subject>("subjects")
+    .select("id, name, teacher_id as teacherId, created_at")
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
 
 export async function fetchStudents() {
-  const { data, error } = await supabase.from<Student>("students").select("*").order("created_at", { ascending: true });
+  const { data, error } = await supabase
+    .from<Student>("students")
+    .select("id, name, avatar_url as avatarUrl, group_id as groupId, grades, email")
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
 
 export async function fetchTimetables() {
-  const { data, error } = await supabase.from<TimetableEntry>("timetables").select("*").order("created_at", { ascending: true });
+  const { data, error } = await supabase
+    .from<TimetableEntry>("timetables")
+    .select("id, day, time, group_id as groupId, subject_id as subjectId")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchStudentByEmail(email: string) {
+  const { data, error } = await supabase
+    .from<Student>("students")
+    .select("id, name, avatar_url as avatarUrl, group_id as groupId, grades, email")
+    .eq("email", email)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? null;
+}
+
+export async function fetchTimetableByGroup(groupId: string) {
+  const { data, error } = await supabase
+    .from<TimetableEntry>("timetables")
+    .select("id, day, time, group_id as groupId, subject_id as subjectId")
+    .eq("group_id", groupId)
+    .order("day", { ascending: true });
   if (error) throw error;
   return data ?? [];
 }

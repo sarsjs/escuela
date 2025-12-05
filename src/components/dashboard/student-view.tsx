@@ -1,5 +1,6 @@
-"use client"
+"use client";
 
+import * as React from "react";
 import {
   Card,
   CardContent,
@@ -15,161 +16,292 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { students, subjects, timetable } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import React from "react";
-import { useToast } from "@/hooks/use-toast";
 import { CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/auth-context";
+import { IdCard } from "@/components/dashboard/id-card";
+import {
+  fetchStudentByEmail,
+  fetchSubjects,
+  fetchTimetableByGroup,
+} from "@/lib/supabase/data";
+import type { Student, TimetableEntry } from "@/lib/types";
 
-const currentStudent = students.find(s => s.id === 'student-1');
-
-const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+const daysOfWeek: TimetableEntry["day"][] = [
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+];
 
 export function StudentView() {
-    const { toast } = useToast();
-    const [attendedClasses, setAttendedClasses] = React.useState<Set<string>>(new Set());
+  const { profile, loading: authLoading, signOut } = useAuth();
+  const { toast } = useToast();
+  const [student, setStudent] = React.useState<Student | null>(null);
+  const [timetable, setTimetable] = React.useState<TimetableEntry[]>([]);
+  const [subjectsMap, setSubjectsMap] = React.useState<Record<string, string>>({});
+  const [fetching, setFetching] = React.useState(false);
+  const [attendedClasses, setAttendedClasses] = React.useState<Set<string>>(new Set());
+  const [chatMessages, setChatMessages] = React.useState<
+    { sender: "student" | "counselor"; text: string }[]
+  >([]);
+  const [newMessage, setNewMessage] = React.useState("");
 
-    // Simple chat state for contacting the counselor
-    const [chatMessages, setChatMessages] = React.useState<
-      { sender: 'student' | 'counselor'; text: string }[]
-    >([]);
-    const [newMessage, setNewMessage] = React.useState("");
-
-    const handleSendMessage = () => {
-      const trimmed = newMessage.trim();
-      if (!trimmed) return;
-      // Append student's message
-      const updated = [
-        ...chatMessages,
-        { sender: 'student', text: trimmed },
-        { sender: 'counselor', text: 'Gracias por tu mensaje. Tu orientador se pondrá en contacto contigo pronto.' },
-      ];
-      setChatMessages(updated);
-      setNewMessage("");
+  React.useEffect(() => {
+    const loadSubjects = async () => {
+      const subjects = await fetchSubjects();
+      const map: Record<string, string> = {};
+      subjects.forEach((subject) => {
+        map[subject.id] = subject.name;
+      });
+      setSubjectsMap(map);
     };
+    loadSubjects().catch((error) => console.error("load subjects", error));
+  }, []);
 
-    if (!currentStudent) {
-        return <Card><CardHeader><CardTitle>Estudiante no encontrado</CardTitle></CardHeader></Card>;
+  React.useEffect(() => {
+    if (!profile || profile.role !== "estudiante" || !profile.email) {
+      setStudent(null);
+      setTimetable([]);
+      return;
     }
 
-    const studentTimetable = timetable.filter(t => t.groupId === currentStudent.groupId);
-
-    const handleAttendance = (entryId: string, subjectName: string) => {
-        // Simulate GPS/QR check
+    setFetching(true);
+    fetchStudentByEmail(profile.email)
+      .then(async (record) => {
+        if (!record) {
+          toast({
+            title: "Perfil incompleto",
+            description: "No encontramos tu ficha estudiantil en la base de datos.",
+          });
+          setStudent(null);
+          setTimetable([]);
+          return;
+        }
+        setStudent(record);
+        const entries = await fetchTimetableByGroup(record.groupId);
+        setTimetable(entries);
+      })
+      .catch((error) => {
+        console.error("load student data", error);
         toast({
-            title: "Verificación Exitosa",
-            description: `Asistencia registrada para ${subjectName}.`,
+          title: "Error al cargar datos",
+          description: "Intenta nuevamente más tarde.",
         });
-        setAttendedClasses(prev => new Set(prev).add(entryId));
-    };
+      })
+      .finally(() => setFetching(false));
+  }, [profile, toast]);
+
+  const handleAttendance = (entryId: string, subjectName: string) => {
+    toast({
+      title: "Verificación exitosa",
+      description: `Asistencia registrada para ${subjectName}.`,
+    });
+    setAttendedClasses((prev) => new Set(prev).add(entryId));
+  };
+
+  const handleSendMessage = () => {
+    const trimmed = newMessage.trim();
+    if (!trimmed) return;
+    const updated = [
+      ...chatMessages,
+      { sender: "student", text: trimmed },
+      {
+        sender: "counselor",
+        text: "Gracias por tu mensaje. Tu orientador se pondrá en contacto pronto.",
+      },
+    ];
+    setChatMessages(updated);
+    setNewMessage("");
+  };
+
+  if (authLoading || fetching) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Cargando tu panel...</p>
+      </div>
+    );
+  }
+
+  if (!profile || profile.role !== "estudiante") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4">
+        <Card className="w-full max-w-md p-6 text-center">
+          <CardTitle>Acceso restringido</CardTitle>
+          <CardDescription>
+            Este panel está disponible únicamente para estudiantes registrados.
+          </CardDescription>
+        </Card>
+        <Button variant="secondary" onClick={() => signOut()}>
+          Cerrar sesión
+        </Button>
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">
+          No encontramos tu expediente. Contacta al orientador para actualizar tus datos.
+        </p>
+      </div>
+    );
+  }
+
+  const subjectGrades = student.grades.map((gradeEntry) => ({
+    ...gradeEntry,
+    subjectName: subjectsMap[gradeEntry.subjectId] ?? "Materia",
+  }));
 
   return (
     <div className="space-y-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Mis Calificaciones</CardTitle>
-                <CardDescription>Tu rendimiento académico para el período actual.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Materia</TableHead>
-                            <TableHead className="text-right">Calificación</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {currentStudent.grades.map(g => {
-                            const subject = subjects.find(s => s.id === g.subjectId);
-                            const gradeColor = g.grade ? (g.grade >= 90 ? 'bg-green-100 text-green-800' : g.grade >= 80 ? 'bg-blue-100 text-blue-800' : g.grade >= 70 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') : 'bg-gray-100 text-gray-800';
+      <Card>
+        <CardHeader>
+          <CardTitle>Identificación digital</CardTitle>
+          <CardDescription>Guarda o comparte tu credencial oficial.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <IdCard
+            name={student.name}
+            role="Estudiante"
+            cycle={student.groupId}
+            avatarUrl={student.avatarUrl}
+            idLabel={student.id.slice(0, 6).toUpperCase()}
+          />
+        </CardContent>
+      </Card>
 
-                            return (
-                                <TableRow key={g.subjectId}>
-                                    <TableCell className="font-medium">{subject?.name || 'N/A'}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Badge className={`text-base ${gradeColor}`}>{g.grade || 'N/A'}</Badge>
-                                    </TableCell>
-                                </TableRow>
-                            )
-                        })}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Mis calificaciones</CardTitle>
+          <CardDescription>Tu desempeño académico actual.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Materia</TableHead>
+                <TableHead className="text-right">Calificación</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {subjectGrades.map((grade) => (
+                <TableRow key={grade.subjectId}>
+                  <TableCell className="font-medium">{grade.subjectName}</TableCell>
+                  <TableCell className="text-right">
+                    <Badge
+                      className={`text-base ${
+                        grade.grade
+                          ? grade.grade >= 90
+                            ? "bg-green-100 text-green-800"
+                            : grade.grade >= 80
+                              ? "bg-blue-100 text-blue-800"
+                              : grade.grade >= 70
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {grade.grade ?? "N/A"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Mi Horario y Asistencia</CardTitle>
-                <CardDescription>Tu horario de clases semanal y registro de asistencia.</CardDescription>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                     {daysOfWeek.map(day => (
-                         <div key={day} className="space-y-2">
-                             <h3 className="font-semibold text-center pb-2 border-b">{day}</h3>
-                             <div className="space-y-3 min-h-24">
-                                {studentTimetable.filter(t => t.day === day).map(entry => {
-                                    const subject = subjects.find(s => s.id === entry.subjectId);
-                                    const hasAttended = attendedClasses.has(entry.id);
-                                    return (
-                                        <div key={entry.id} className="p-3 bg-muted rounded-lg text-sm flex flex-col gap-2">
-                                            <div>
-                                                <p className="font-semibold">{subject?.name}</p>
-                                                <p className="text-xs text-muted-foreground">{entry.time}</p>
-                                            </div>
-                                            <Button 
-                                                size="sm" 
-                                                onClick={() => handleAttendance(entry.id, subject?.name || 'la clase')}
-                                                disabled={hasAttended}
-                                                variant={hasAttended ? 'secondary' : 'default'}
-                                            >
-                                                {hasAttended ? <><CheckCircle className="mr-2 h-4 w-4" /> Presente</> : 'Pase de Lista'}
-                                            </Button>
-                                        </div>
-                                    )
-                                })}
-                             </div>
-                         </div>
-                     ))}
-                 </div>
-            </CardContent>
-        </Card>
-
-        {/* Contact chat card */}
-        <Card>
-            <CardHeader>
-                <CardTitle>Contacto con Orientador</CardTitle>
-                <CardDescription>Puedes enviar un mensaje a tu orientador para aclarar dudas o solicitar apoyo.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-col gap-4">
-                    <div className="h-48 overflow-y-auto border rounded-md p-2 space-y-2">
-                        {chatMessages.length === 0 && (
-                            <p className="text-sm text-muted-foreground">Aún no hay mensajes.</p>
-                        )}
-                        {chatMessages.map((msg, idx) => (
-                            <div
-                                key={idx}
-                                className={`max-w-[70%] p-2 rounded-lg text-sm ${msg.sender === 'student' ? 'ml-auto bg-primary text-primary-foreground' : 'mr-auto bg-muted'}`}
-                            >
-                                {msg.text}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex gap-2">
-                        <Input
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Escribe tu mensaje..."
-                            className="flex-1"
-                        />
-                        <Button onClick={handleSendMessage}>Enviar</Button>
-                    </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Mi horario</CardTitle>
+          <CardDescription>Planifica tu semana escolar.</CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {daysOfWeek.map((day) => (
+              <div key={day} className="space-y-2">
+                <h3 className="font-semibold text-center pb-2 border-b">{day}</h3>
+                <div className="space-y-3 min-h-24">
+                  {timetable
+                    .filter((entry) => entry.day === day)
+                    .map((entry) => {
+                      const subjectName = subjectsMap[entry.subjectId] ?? "Materia";
+                      const hasAttended = attendedClasses.has(entry.id);
+                      return (
+                        <div
+                          key={entry.id}
+                          className="p-3 rounded-lg bg-muted text-sm flex flex-col gap-2"
+                        >
+                          <div>
+                            <p className="font-semibold">{subjectName}</p>
+                            <p className="text-xs text-muted-foreground">{entry.time}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={hasAttended ? "secondary" : "default"}
+                            onClick={() => handleAttendance(entry.id, subjectName)}
+                            disabled={hasAttended}
+                          >
+                            {hasAttended ? (
+                              <>
+                                <CheckCircle className="mr-2 h-4 w-4" /> Presente
+                              </>
+                            ) : (
+                              "Pase de lista"
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })}
                 </div>
-            </CardContent>
-        </Card>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Contacto con orientador</CardTitle>
+          <CardDescription>Envía un mensaje rápido al equipo de apoyo.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+              {chatMessages.length === 0 && (
+                <p className="text-sm text-muted-foreground">Aún no hay mensajes.</p>
+              )}
+              {chatMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`max-w-[70%] p-2 rounded-lg text-sm ${
+                    msg.sender === "student"
+                      ? "ml-auto bg-primary text-primary-foreground"
+                      : "mr-auto bg-muted"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={newMessage}
+                onChange={(event) => setNewMessage(event.target.value)}
+                placeholder="Escribe tu mensaje..."
+                className="flex-1"
+              />
+              <Button onClick={handleSendMessage}>Enviar</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

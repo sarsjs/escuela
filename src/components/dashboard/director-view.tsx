@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react";
-import { School, Users, User, FolderKanban } from "lucide-react";
+import { School, Users, User, FolderKanban, Trash2 } from "lucide-react";
 import { StatCard } from "./stat-card";
 import {
   Card,
@@ -33,6 +33,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SecurityAlerts } from "./security-alerts";
 import type { UserRole } from "@/lib/types";
@@ -81,10 +82,10 @@ export function DirectorView() {
     const id = `user-${Date.now()}`;
     const avatarSeed = Math.floor(Math.random() * 1000);
     const avatarUrl = `https://picsum.photos/seed/${avatarSeed}/100/100`;
-      const newUser = {
-        id,
-        name: newStaffName,
-        role: newStaffRole,
+    const newUser = {
+      id,
+      name: newStaffName,
+      role: newStaffRole,
       avatarUrl,
       email: newStaffEmail,
     };
@@ -97,6 +98,30 @@ export function DirectorView() {
     toast({
       title: "Personal añadido",
       description: `Se agregó a ${newStaffName}.`,
+    });
+  };
+
+  const handleRemoveStaff = (staffId: string) => {
+    const removed = staffList.find((u) => u.id === staffId);
+    if (!removed) {
+      return;
+    }
+
+    const remainingStaff = staffList.filter((u) => u.id !== staffId);
+    const replacementCounselor = remainingStaff.find((u) => u.role === "orientador")?.id ?? "";
+
+    setStaffList(remainingStaff);
+    setGroupList((prev) =>
+      prev.map((group) =>
+        group.counselorId === staffId
+          ? { ...group, counselorId: replacementCounselor }
+          : group
+      )
+    );
+
+    toast({
+      title: "Personal eliminado",
+      description: `${removed.name} ya no aparece en el panel.`,
     });
   };
 
@@ -257,6 +282,7 @@ export function DirectorView() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Rol</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -277,6 +303,17 @@ export function DirectorView() {
                       </Badge>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/20"
+                        onClick={() => handleRemoveStaff(user.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Eliminar personal</span>
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

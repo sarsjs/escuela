@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { students, subjects, timetable, groups } from "@/lib/data";
+import { students, subjects, timetable } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";

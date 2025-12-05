@@ -1,4 +1,4 @@
-import { User, Student, Group, Subject, SchoolCycle, TimetableEntry, Attendance, SecurityAlert } from './types';
+﻿import { User, Student, Group, Subject, SchoolCycle, TimetableEntry, Attendance, SecurityAlert } from './types';
 
 export const users: User[] = [
   { id: 'user-1', name: 'Dra. Evelyn Reed', role: 'director', avatarUrl: 'https://picsum.photos/seed/1/100/100', email: 'e.reed@school.com' },
@@ -23,8 +23,8 @@ export const groups: Group[] = [
 ];
 
 export const subjects: Subject[] = [
-  { id: 'subj-1', name: 'Matemáticas', teacherId: 'user-3' },
-  { id: 'subj-2', name: 'Física', teacherId: 'user-6' },
+  { id: 'subj-1', name: 'MatemÃ¡ticas', teacherId: 'user-3' },
+  { id: 'subj-2', name: 'FÃ­sica', teacherId: 'user-6' },
   { id: 'subj-3', name: 'Historia', teacherId: 'user-7' },
   { id: 'subj-4', name: 'Literatura', teacherId: 'user-3' },
 ];

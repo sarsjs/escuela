@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react";
 import { ClipboardList, Calendar, BookCopy, Users } from "lucide-react";
 import { StatCard } from "./stat-card";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { students, groups, subjects, timetable, securityAlerts } from "@/lib/data";
+import type { TimetableEntry } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -63,7 +65,7 @@ export function CounselorView({ currentUser }: { currentUser: User }) {
 
   // Dialog state and form fields for adding a new schedule entry
   const [addScheduleOpen, setAddScheduleOpen] = React.useState(false);
-  const [newScheduleDay, setNewScheduleDay] = React.useState("Lunes");
+  const [newScheduleDay, setNewScheduleDay] = React.useState<TimetableEntry["day"]>("Lunes");
   const [newScheduleTime, setNewScheduleTime] = React.useState("");
   const [newScheduleSubjectId, setNewScheduleSubjectId] = React.useState(
     subjects[0]?.id ?? ""
@@ -73,7 +75,13 @@ export function CounselorView({ currentUser }: { currentUser: User }) {
   );
 
   // Days of week options
-  const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+  const daysOfWeek: TimetableEntry["day"][] = [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+  ];
 
   const handleAddStudent = () => {
     if (!newStudentName || !newStudentGroupId) {
@@ -121,7 +129,7 @@ export function CounselorView({ currentUser }: { currentUser: User }) {
         id,
         groupId: newScheduleGroupId,
         subjectId: newScheduleSubjectId,
-        day: newScheduleDay as any,
+        day: newScheduleDay,
         time: newScheduleTime,
       },
     ]);

@@ -1,6 +1,7 @@
 "use client"
 
-import { School, Users, User, FolderKanban, ShieldAlert } from "lucide-react";
+import * as React from "react";
+import { School, Users, User, FolderKanban } from "lucide-react";
 import { StatCard } from "./stat-card";
 import {
   Card,
@@ -34,6 +35,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { SecurityAlerts } from "./security-alerts";
+import type { UserRole } from "@/lib/types";
 
 export function DirectorView() {
   // Maintain local state for dynamic staff, groups and cycles
@@ -49,7 +51,7 @@ export function DirectorView() {
   // Dialog state and form fields for adding staff
   const [addStaffOpen, setAddStaffOpen] = React.useState(false);
   const [newStaffName, setNewStaffName] = React.useState("");
-  const [newStaffRole, setNewStaffRole] = React.useState("orientador");
+  const [newStaffRole, setNewStaffRole] = React.useState<UserRole>("orientador");
   const [newStaffEmail, setNewStaffEmail] = React.useState("");
 
   // Dialog state and form fields for adding a new group
@@ -79,10 +81,10 @@ export function DirectorView() {
     const id = `user-${Date.now()}`;
     const avatarSeed = Math.floor(Math.random() * 1000);
     const avatarUrl = `https://picsum.photos/seed/${avatarSeed}/100/100`;
-    const newUser = {
-      id,
-      name: newStaffName,
-      role: newStaffRole as any,
+      const newUser = {
+        id,
+        name: newStaffName,
+        role: newStaffRole,
       avatarUrl,
       email: newStaffEmail,
     };
@@ -226,7 +228,7 @@ export function DirectorView() {
                       <label className="block text-sm font-medium">Rol</label>
                       <Select
                         value={newStaffRole}
-                        onValueChange={(value) => setNewStaffRole(value)}
+                        onValueChange={(value) => setNewStaffRole(value as UserRole)}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Seleccionar Rol" />

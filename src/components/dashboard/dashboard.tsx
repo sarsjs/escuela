@@ -234,28 +234,6 @@ export function Dashboard() {
   
   // Logic to handle substitute counselor
   const substituteUser = users.find(u => u.id === 'user-5'); // Lic. Marcus Holloway
-  const originalUserForMarcus = users.find(u => u.id === 'user-2'); // Lic. Samuel Chen
-
-  let displayUser = currentUser;
-  let view = currentUser.role;
-
-  if (isSubstitute && currentUser.role === 'director' && substituteUser) {
-    // Director is viewing as the substitute
-    displayUser = substituteUser;
-    view = 'orientador';
-  } else if (isSubstitute && currentUser.id === 'user-5' && originalUserForMarcus) {
-    // The substitute counselor is logged in
-    displayUser = originalUserForMarcus;
-    view = 'orientador';
-  } else if (isSubstitute && currentUser.role === 'orientador' && currentUser.id !== 'user-5') {
-     // Another counselor is logged in, but substitute mode is on. We can assign them the substitute tasks.
-     // For this demo, let's assume user-2 (Samuel) is the substitute for user-5 (Marcus)
-     if (currentUser.id === 'user-2' && substituteUser) {
-        displayUser = substituteUser
-        view = 'orientador'
-     }
-  }
-
 
   const effectiveUser = isSubstitute && (currentUser.role === 'director' || currentUser.id === 'user-2') && substituteUser ? substituteUser : currentUser;
 

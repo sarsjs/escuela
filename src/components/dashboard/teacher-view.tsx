@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react";
 import {
   Card,
   CardContent,
@@ -64,11 +65,12 @@ export function TeacherView() {
   };
 
   const handleGradeChange = (studentId: string, subjectId: string, value: string) => {
-    // Convert input to number if possible, else empty string
-    const numeric = value === '' ? '' : Number(value);
+    const parsed = value === "" ? "" : Number(value);
+    const normalized =
+      parsed === "" || Number.isNaN(parsed) ? "" : (parsed as number);
     setGradesState({
       ...gradesState,
-      [`${studentId}-${subjectId}`]: isNaN(numeric as any) ? '' : (numeric as number | ''),
+      [`${studentId}-${subjectId}`]: normalized,
     });
   };
 

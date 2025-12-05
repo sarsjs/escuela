@@ -55,9 +55,9 @@ import { Badge } from "../ui/badge";
 
 const navItems = {
   director: [
-    { href: "#", icon: Home, label: "Panel Principal" },
-    { href: "#", icon: Users, label: "Personal" },
-    { href: "#", icon: School, label: "Estructura" },
+    { href: "#panel", icon: Home, label: "Panel Principal" },
+    { href: "#personal", icon: Users, label: "Personal" },
+    { href: "#estructura", icon: School, label: "Estructura" },
   ],
   orientador: [
     { href: "#", icon: Home, label: "Panel Principal" },
@@ -124,17 +124,35 @@ function AppSidebar({ user }: { user: User }) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {currentNav.map((item, index) => (
-            <SidebarMenuItem key={item.label}>
-              <SidebarMenuButton
-                tooltip={{ children: item.label, hidden: open }}
-                isActive={index === 0}
-              >
+          {currentNav.map((item, index) => {
+            const buttonContent = (
+              <>
                 <item.icon />
                 <span>{item.label}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+              </>
+            );
+
+            return (
+              <SidebarMenuItem key={item.label}>
+                {item.href && item.href !== "#" ? (
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={{ children: item.label, hidden: open }}
+                    isActive={index === 0}
+                  >
+                    <a href={item.href}>{buttonContent}</a>
+                  </SidebarMenuButton>
+                ) : (
+                  <SidebarMenuButton
+                    tooltip={{ children: item.label, hidden: open }}
+                    isActive={index === 0}
+                  >
+                    {buttonContent}
+                  </SidebarMenuButton>
+                )}
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>

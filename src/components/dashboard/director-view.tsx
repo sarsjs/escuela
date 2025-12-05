@@ -153,7 +153,8 @@ export function DirectorView() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section id="panel">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total del Personal"
           value={staffList.length.toString()}
@@ -182,11 +183,13 @@ export function DirectorView() {
 
       <div className="grid grid-cols-1 gap-6">
          <SecurityAlerts alerts={securityAlerts} />
-      </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
+        <section id="personal" className="space-y-6">
+          <Card>
+            <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Gestionar Personal</CardTitle>
@@ -279,10 +282,12 @@ export function DirectorView() {
               </TableBody>
             </Table>
           </CardContent>
-        </Card>
+          </Card>
+        </section>
 
-        <Card>
-          <CardHeader>
+        <section id="estructura" className="space-y-6">
+          <Card>
+            <CardHeader>
              <div className="flex items-center justify-between">
                 <div>
                     <CardTitle>Estructura Escolar</CardTitle>
@@ -420,7 +425,8 @@ export function DirectorView() {
               </TableBody>
             </Table>
           </CardContent>
-        </Card>
+          </Card>
+        </section>
       </div>
     </div>
   );

@@ -28,6 +28,8 @@ import {
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { useAuth } from "@/context/auth-context";
+import { IdCard } from "@/components/dashboard/id-card";
 
 const teacherSubjects = subjects.filter((s) => s.teacherId === 'user-3');
 
@@ -85,8 +87,27 @@ export function TeacherView() {
     return allStudents.filter((s) => s.groupId === groupId);
   };
 
+  const { profile } = useAuth();
+
   return (
     <div className="space-y-6">
+      {profile && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Identificación digital</CardTitle>
+            <CardDescription>Descarga tu credencial oficial.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <IdCard
+              name={profile.name}
+              role="Profesor"
+              cycle="Docencia"
+              avatarUrl={profile.avatarUrl}
+              idLabel={profile.id.slice(0, 6).toUpperCase()}
+            />
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Mis Clases</CardTitle>

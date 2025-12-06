@@ -34,8 +34,10 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/auth-context";
 import { User } from "@/lib/types";
 import { SecurityAlerts } from "./security-alerts";
+import { IdCard } from "./id-card";
 
 export function CounselorView({ currentUser }: { currentUser: User }) {
   // Determine which groups are supervised by the current counselor
@@ -55,6 +57,7 @@ export function CounselorView({ currentUser }: { currentUser: User }) {
 
   // Toast hook for notifications
   const { toast } = useToast();
+  const { profile } = useAuth();
 
   // Dialog state and form fields for adding a student
   const [addStudentOpen, setAddStudentOpen] = React.useState(false);
@@ -174,9 +177,27 @@ export function CounselorView({ currentUser }: { currentUser: User }) {
       </div>
 
        {assignedAlerts.length > 0 && (
-        <div className="grid grid-cols-1 gap-6">
-          <SecurityAlerts alerts={assignedAlerts} />
-        </div>
+         <div className="grid grid-cols-1 gap-6">
+           <SecurityAlerts alerts={assignedAlerts} />
+         </div>
+       )}
+
+      {profile?.role === "orientador" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Identificación digital</CardTitle>
+            <CardDescription>Tu credencial oficial para el turno.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <IdCard
+              name={currentUser.name}
+              role="Orientador"
+              cycle="Orientación"
+              avatarUrl={currentUser.avatarUrl}
+              idLabel={currentUser.id.slice(0, 6).toUpperCase()}
+            />
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

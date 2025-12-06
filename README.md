@@ -12,6 +12,7 @@ This is the EduChain Next.js dashboard project.
   NEXT_PUBLIC_SUPABASE_ANON_KEY=public-anon-key
   ```
 - Restart the dev server so the env values are picked up. Export the same variables in your deployment provider (Vercel, Netlify, etc.) so `npm run build` and API routes work.
+- Once the schema is ready, execute `supabase/policies.sql` (or copy its contents into the Supabase SQL editor) to enable RLS on `students`/`timetables` so every role only sees what it should. The steps are documented in `docs/policies.md`.
 
 Once the client is available (`src/lib/supabase/client.ts`) the UI starts calling Supabase tables instead of the mock data.
 - The repository now includes `scripts/check-env.js`. Every time you run `npm run dev`, `npm run build` or `npm start`, Node first ensures:
